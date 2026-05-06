@@ -1,6 +1,8 @@
 # Session Prompt Log
 
-All AI prompts used during development of this project, in chronological order.
+All AI prompts used during development of this project with Claude Code, in chronological order.
+
+NB: Each step began after using /clear to clear the current context of the claude-code session. Each Step began with the /plan command to establish what would be created before executing.
 
 ---
 
@@ -20,7 +22,7 @@ All AI prompts used during development of this project, in chronological order.
 
 ### Prompt 4 — Add session-log instruction to CLAUDE.md
 
-> Update the claude.md to include instructions to always, after every prompt, append the prompt to the session-log.md. Make sure this instruction goes into the Appenda section of the Claude.md
+> Update the claude.md to include instructions to always, after every prompt, append the prompt to the session-log.md. Make sure this instruction goes into the Addenda section of the Claude.md
 
 ### Prompt 5 — Create .gitignore
 
@@ -45,3 +47,17 @@ All AI prompts used during development of this project, in chronological order.
 ### Prompt 10 — Test Defensive Copying Behavior
 
 > Add test cases to enqueue and peek that cover the copying mechanisms we've added, validating that the return value of peek is not the 0 index order in the queue, and that the order enqueued by enqueue is not equal to the order given as the argument.
+
+## Session 2 — 2026-05-06
+
+### Prompt 11 — Plan Step 4
+
+> Steps 1 - 3 of the What to Build - Sequence list in the Claude.md are complete. Please Plan step 4 before we execute.
+
+### Prompt 12 — Execute Step 4 Without Ultraplan
+
+> Proceed without ultraplan, I would like to manually approve each edit
+
+### Prompt 13 — Build Test File and Run Tests
+
+> Build the test file now and run the tests

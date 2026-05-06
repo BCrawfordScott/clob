@@ -424,3 +424,11 @@ All classes that hold collections of mutable domain objects (`Order`, etc.) must
 - **`snapshot` (aggregate read):** Always return a plain value object constructed from internal state — never a reference into the collection.
 
 Apply this same boundary discipline in `OrderBook` and any future service that holds live domain objects. The goal is that no caller can observe a change they did not explicitly make through a mutating method.
+
+### 2026-05-06 — Preserve Time Complexity of OrderBook Operations
+
+All auxiliary data structures that support orderbook operations must be designed to preserve the time complexity targets in the Performance Profile table. Do not introduce lookups or comparisons that degrade a documented O(1) operation to O(log n) or worse.
+
+The canonical example: `OrderBook.orderIndex` stores `{ level: PriceLevel; side: Side }` rather than just `PriceLevel`. The `side` field allows `cancelOrder` to select the correct BTree (`bids` vs. `asks`) in O(1). Omitting it and using a reference-equality BTree lookup would degrade the cleanup step to O(log n), breaking the documented cancel complexity.
+
+When adding any helper map, index, or cache inside a domain class or service, verify that every operation path it participates in still meets its documented complexity target.
