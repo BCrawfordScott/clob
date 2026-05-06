@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build output
+server/dist/
+client/dist/
+
+# Angular cache
+.angular/
+
+# TypeScript incremental compilation
+*.tsbuildinfo
+
+# Test coverage
+coverage/
+server/coverage/
+client/coverage/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+npm-debug.log*
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

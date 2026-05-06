@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "workspaces": ["server", "client"],
+  "scripts": {
+    "start": "concurrently \"npm:start --workspace=server\" \"npm:start --workspace=client\"",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.0"
+  }
+}
