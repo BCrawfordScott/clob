@@ -24,20 +24,20 @@ describe('OrderBook', () => {
   describe('addOrder', () => {
     it('routes a buy order to the bid side', () => {
       book.addOrder(makeOrder('a', 'buy', 100, 10));
-      expect(book.getBestBid()?.price).toBe(100);
-      expect(book.getBestAsk()).toBeUndefined();
+      expect(book.bestBidLevel()?.price).toBe(100);
+      expect(book.bestAskLevel()).toBeUndefined();
     });
 
     it('routes a sell order to the ask side', () => {
       book.addOrder(makeOrder('a', 'sell', 101, 10));
-      expect(book.getBestAsk()?.price).toBe(101);
-      expect(book.getBestBid()).toBeUndefined();
+      expect(book.bestAskLevel()?.price).toBe(101);
+      expect(book.bestBidLevel()).toBeUndefined();
     });
 
     it('aggregates two orders at the same price into one level', () => {
       book.addOrder(makeOrder('a', 'buy', 100, 10));
       book.addOrder(makeOrder('b', 'buy', 100, 20));
-      const level = book.getBestBid()!;
+      const level = book.bestBidLevel()!;
       expect(level.totalQuantity()).toBe(30);
       expect(level.snapshot().orderCount).toBe(2);
     });
@@ -60,7 +60,7 @@ describe('OrderBook', () => {
       book.addOrder(makeOrder('a', 'buy', 100, 10));
       book.addOrder(makeOrder('b', 'buy', 100, 20));
       expect(book.cancelOrder('a')).toBe(true);
-      expect(book.getBestBid()!.totalQuantity()).toBe(20);
+      expect(book.bestBidLevel()!.totalQuantity()).toBe(20);
     });
 
     it('returns false for an unknown orderId', () => {
@@ -70,60 +70,102 @@ describe('OrderBook', () => {
     it('removes the price level from the book when the last order is cancelled', () => {
       book.addOrder(makeOrder('a', 'buy', 100, 10));
       book.cancelOrder('a');
-      expect(book.getBestBid()).toBeUndefined();
+      expect(book.bestBidLevel()).toBeUndefined();
     });
 
     it('removes ask level when last sell order is cancelled', () => {
       book.addOrder(makeOrder('a', 'sell', 101, 10));
       book.cancelOrder('a');
-      expect(book.getBestAsk()).toBeUndefined();
+      expect(book.bestAskLevel()).toBeUndefined();
     });
 
     it('leaves other orders at the same level intact', () => {
       book.addOrder(makeOrder('a', 'sell', 101, 10));
       book.addOrder(makeOrder('b', 'sell', 101, 20));
       book.cancelOrder('a');
-      expect(book.getBestAsk()!.totalQuantity()).toBe(20);
+      expect(book.bestAskLevel()!.totalQuantity()).toBe(20);
     });
   });
 
-  describe('getBestBid', () => {
+  describe('peekBestBid', () => {
     it('returns undefined when bids are empty', () => {
-      expect(book.getBestBid()).toBeUndefined();
+      expect(book.peekBestBid()).toBeUndefined();
+    });
+
+    it('returns the front order of the highest-price bid level', () => {
+      book.addOrder(makeOrder('a', 'buy', 99, 10));
+      book.addOrder(makeOrder('b', 'buy', 101, 20));
+      const order = book.peekBestBid()!;
+      expect(order.price).toBe(101);
+      expect(order.remainingQty).toBe(20);
+    });
+
+    it('returns a copy — mutating it does not affect book state', () => {
+      book.addOrder(makeOrder('a', 'buy', 100, 10));
+      const order = book.peekBestBid()!;
+      order.remainingQty = 9999;
+      expect(book.peekBestBid()!.remainingQty).toBe(10);
+    });
+  });
+
+  describe('peekBestAsk', () => {
+    it('returns undefined when asks are empty', () => {
+      expect(book.peekBestAsk()).toBeUndefined();
+    });
+
+    it('returns the front order of the lowest-price ask level', () => {
+      book.addOrder(makeOrder('a', 'sell', 103, 10));
+      book.addOrder(makeOrder('b', 'sell', 101, 20));
+      const order = book.peekBestAsk()!;
+      expect(order.price).toBe(101);
+      expect(order.remainingQty).toBe(20);
+    });
+
+    it('returns a copy — mutating it does not affect book state', () => {
+      book.addOrder(makeOrder('a', 'sell', 101, 10));
+      const order = book.peekBestAsk()!;
+      order.remainingQty = 9999;
+      expect(book.peekBestAsk()!.remainingQty).toBe(10);
+    });
+  });
+
+  describe('bestBidLevel', () => {
+    it('returns undefined when bids are empty', () => {
+      expect(book.bestBidLevel()).toBeUndefined();
     });
 
     it('returns the highest-price bid level', () => {
       book.addOrder(makeOrder('a', 'buy', 99, 10));
       book.addOrder(makeOrder('b', 'buy', 101, 10));
       book.addOrder(makeOrder('c', 'buy', 100, 10));
-      expect(book.getBestBid()!.price).toBe(101);
+      expect(book.bestBidLevel()!.price).toBe(101);
     });
 
     it('returns a live reference — dequeuing updates the level', () => {
       book.addOrder(makeOrder('a', 'buy', 100, 10));
-      const level = book.getBestBid()!;
+      const level = book.bestBidLevel()!;
       level.dequeue();
-      expect(book.getBestBid()!.isEmpty()).toBe(true);
+      expect(book.bestBidLevel()!.isEmpty()).toBe(true);
     });
   });
 
-  describe('getBestAsk', () => {
+  describe('bestAskLevel', () => {
     it('returns undefined when asks are empty', () => {
-      expect(book.getBestAsk()).toBeUndefined();
+      expect(book.bestAskLevel()).toBeUndefined();
     });
 
     it('returns the lowest-price ask level', () => {
       book.addOrder(makeOrder('a', 'sell', 103, 10));
       book.addOrder(makeOrder('b', 'sell', 101, 10));
       book.addOrder(makeOrder('c', 'sell', 102, 10));
-      expect(book.getBestAsk()!.price).toBe(101);
+      expect(book.bestAskLevel()!.price).toBe(101);
     });
 
     it('returns a live reference — dequeuing updates the level', () => {
       book.addOrder(makeOrder('a', 'sell', 101, 10));
-      const level = book.getBestAsk()!;
+      const level = book.bestAskLevel()!;
       level.dequeue();
-      expect(book.getBestAsk()!.isEmpty()).toBe(true);
+      expect(book.bestAskLevel()!.isEmpty()).toBe(true);
     });
   });
 
@@ -131,13 +173,13 @@ describe('OrderBook', () => {
     it('removes a bid level by price', () => {
       book.addOrder(makeOrder('a', 'buy', 100, 10));
       book.removePriceLevel(100, 'buy');
-      expect(book.getBestBid()).toBeUndefined();
+      expect(book.bestBidLevel()).toBeUndefined();
     });
 
     it('removes an ask level by price', () => {
       book.addOrder(makeOrder('a', 'sell', 101, 10));
       book.removePriceLevel(101, 'sell');
-      expect(book.getBestAsk()).toBeUndefined();
+      expect(book.bestAskLevel()).toBeUndefined();
     });
 
     it('does not throw when the price does not exist', () => {

@@ -42,20 +42,32 @@ export class OrderBook {
     return removed;
   }
 
+  // Read-only inspection — safe for any caller
+  peekBestBid(): Order | undefined {
+    const key = this.bids.maxKey();
+    if (key === undefined) return undefined;
+
+    return this.bids.get(key)?.peek();
+  }
+
+  peekBestAsk(): Order | undefined {
+    const key = this.asks.minKey();
+    if (key === undefined) return undefined;
+
+    return this.asks.get(key)?.peek();
+  }
+
   /**
-   * Returns the live PriceLevel at the top of the bid side.
+   * Mutable access — only for the MatchingEngine during matching
+   * Returns the live PriceLevel at the top of the ask side.
    * The caller may dequeue from it directly — ownership of dequeued orders transfers to the caller.
    */
-  getBestBid(): PriceLevel | undefined {
+  bestBidLevel(): PriceLevel | undefined {
     const key = this.bids.maxKey();
     return key !== undefined ? this.bids.get(key) : undefined;
   }
 
-  /**
-   * Returns the live PriceLevel at the top of the ask side.
-   * The caller may dequeue from it directly — ownership of dequeued orders transfers to the caller.
-   */
-  getBestAsk(): PriceLevel | undefined {
+  bestAskLevel(): PriceLevel | undefined {
     const key = this.asks.minKey();
     return key !== undefined ? this.asks.get(key) : undefined;
   }
