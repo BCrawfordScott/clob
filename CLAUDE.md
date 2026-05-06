@@ -413,3 +413,14 @@ Follow this order to maximize logical layering and testability at each step:
 ### 2026-05-05 — Session Prompt Logging
 
 After every user prompt, append the prompt to `/prompts/session-log.md` under the current session heading before doing anything else. Use the format already established in that file: a `### Prompt N — Short Title` heading, followed by a newline, followed by the prompt text as a blockquote.
+
+### 2026-05-05 — Defensive Copying for Mutable Domain Objects
+
+All classes that hold collections of mutable domain objects (`Order`, etc.) must apply defensive copying at their boundaries to prevent external callers from silently corrupting internal state. The established pattern, as implemented in `PriceLevel`, is:
+
+- **`enqueue` (write):** Store a shallow copy (`{ ...order }`) rather than the caller's reference. The caller retaining or mutating their original object cannot affect book state.
+- **`peek` (read without transfer):** Return a shallow copy. The caller receives the current values but cannot mutate the live object through that reference.
+- **`dequeue` (read with transfer):** Return the actual internal reference. Ownership transfers to the caller; they may mutate it freely (e.g., the matching engine updating `remainingQty`). Document this transfer of ownership in a comment.
+- **`snapshot` (aggregate read):** Always return a plain value object constructed from internal state — never a reference into the collection.
+
+Apply this same boundary discipline in `OrderBook` and any future service that holds live domain objects. The goal is that no caller can observe a change they did not explicitly make through a mutating method.
