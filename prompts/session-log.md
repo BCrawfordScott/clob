@@ -25,3 +25,7 @@ All AI prompts used during development of this project, in chronological order.
 ### Prompt 5 — Create .gitignore
 
 > Create a sensible gitignore for this project based on the current structure and the project's roadmap
+
+### Prompt 6 — Plan Step 2
+
+> Step 1 as outlined in What to Build - Sequence is complete. Please plan step 2 for review before executing.
