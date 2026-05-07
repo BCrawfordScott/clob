@@ -64,7 +64,7 @@ NB: Each step began after using /clear to clear the current context of the claud
 
 ## Session 3 — 2026-05-07
 
-### Prompt 14 — Step 5: MatchingEngine
+### Prompt 14 — Step 5: MatchingEngine (see Session 3 above)
 
 > Steps 1–4 are complete. The domain layer has PriceLevel (FIFO queue over Order[] with enqueue, dequeue, prepend, remove, peek, isEmpty, totalQuantity, and snapshot) and OrderBook (BTree-backed bid/ask sides with addOrder, cancelOrder, bestBidLevel, bestAskLevel, peekBestBid, peekBestAsk, removePriceLevel, and snapshot). We are now implementing Step 5: the MatchingEngine.
 >
@@ -78,3 +78,9 @@ NB: Each step began after using /clear to clear the current context of the claud
 > [...]
 >
 > Files to Create: matching-engine.ts and matching-engine.spec.ts with 12 test cases covering no-match, full fill, partial fill, multi-level fill, time priority, self-trade prevention, order ID assignment, and maker's price used.
+
+### Prompt 15 — Step 6: OrderBookRegistry
+
+> Step 5 in What to Build - Sequence of Claude.md is complete. Please plan step 6: The OrderBookRegistry is a NestJS @Injectable() singleton that acts as the directory of all active OrderBook instances in the system.
+> Its sole responsibility is answering one question: given a ticker symbol, give me its OrderBook. That's it.
+> [implementation sketch with getOrCreate and get methods provided]
