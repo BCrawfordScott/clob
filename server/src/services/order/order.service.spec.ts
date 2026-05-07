@@ -111,6 +111,39 @@ describe('OrderService', () => {
     });
   });
 
+  describe('placeOrder — self-trade prevention', () => {
+    it('does not match when taker and maker share the same traderId (sell then buy)', () => {
+      service.placeOrder(makeInput({ traderId: 'trader-A', side: 'sell', price: 100, quantity: 10 }));
+      const result = service.placeOrder(makeInput({ traderId: 'trader-A', side: 'buy', price: 100, quantity: 10 }));
+      expect(result.status).toBe('open');
+      expect(result.trades).toHaveLength(0);
+    });
+
+    it('leaves both self-trade orders resting in the book', () => {
+      service.placeOrder(makeInput({ traderId: 'trader-A', side: 'sell', price: 100, quantity: 10 }));
+      service.placeOrder(makeInput({ traderId: 'trader-A', side: 'buy', price: 100, quantity: 10 }));
+      const book = registry.getOrCreate('AAPL');
+      expect(book.bestAskLevel()).toBeDefined();
+      expect(book.bestBidLevel()).toBeDefined();
+    });
+
+    it('does not match when taker and maker share the same traderId (buy then sell)', () => {
+      service.placeOrder(makeInput({ traderId: 'trader-A', side: 'buy', price: 100, quantity: 10 }));
+      const result = service.placeOrder(makeInput({ traderId: 'trader-A', side: 'sell', price: 100, quantity: 10 }));
+      expect(result.status).toBe('open');
+      expect(result.trades).toHaveLength(0);
+    });
+
+    it('allows a different trader to fill a resting order after a self-trade prevention', () => {
+      service.placeOrder(makeInput({ traderId: 'trader-A', side: 'sell', price: 100, quantity: 10 }));
+      service.placeOrder(makeInput({ traderId: 'trader-A', side: 'buy', price: 100, quantity: 5 }));
+      const result = service.placeOrder(makeInput({ traderId: 'trader-B', side: 'buy', price: 100, quantity: 10 }));
+      expect(result.status).toBe('filled');
+      expect(result.trades).toHaveLength(1);
+      expect(result.trades[0].quantity).toBe(10);
+    });
+  });
+
   describe('cancelOrder', () => {
     it('cancels a resting order and reports cancelled: true', () => {
       const placed = service.placeOrder(makeInput({ side: 'sell', price: 100, quantity: 10 }));

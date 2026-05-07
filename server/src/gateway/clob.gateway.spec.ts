@@ -1,3 +1,4 @@
+import { ValidationPipe, BadRequestException } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { ClobGateway } from './clob.gateway';
 import { OrderService } from '../services/order/order.service';
@@ -217,6 +218,70 @@ describe('ClobGateway', () => {
         expect(() => gateway.handleOrderPartialFill(payload)).not.toThrow();
         expect(mockTo).not.toHaveBeenCalled();
       });
+    });
+  });
+});
+
+describe('DTO validation (ValidationPipe configuration)', () => {
+  const pipe = new ValidationPipe({ transform: true, whitelist: true });
+
+  describe('PlaceOrderDto', () => {
+    it('rejects when ticker is missing', async () => {
+      await expect(
+        pipe.transform(
+          { traderId: 'A', side: 'buy', price: 100, quantity: 10 },
+          { type: 'body', metatype: PlaceOrderDto },
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('rejects when price is not positive', async () => {
+      await expect(
+        pipe.transform(
+          { traderId: 'A', ticker: 'AAPL', side: 'buy', price: -1, quantity: 10 },
+          { type: 'body', metatype: PlaceOrderDto },
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('rejects when side is not buy or sell', async () => {
+      await expect(
+        pipe.transform(
+          { traderId: 'A', ticker: 'AAPL', side: 'hold', price: 100, quantity: 10 },
+          { type: 'body', metatype: PlaceOrderDto },
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('accepts a valid place_order payload', async () => {
+      await expect(
+        pipe.transform(
+          { traderId: 'A', ticker: 'AAPL', side: 'buy', price: 100, quantity: 10 },
+          { type: 'body', metatype: PlaceOrderDto },
+        ),
+      ).resolves.toMatchObject({ traderId: 'A', ticker: 'AAPL', side: 'buy', price: 100, quantity: 10 });
+    });
+  });
+
+  describe('CancelOrderDto', () => {
+    it('rejects when orderId is missing', async () => {
+      await expect(
+        pipe.transform({}, { type: 'body', metatype: CancelOrderDto }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('rejects when orderId is an empty string', async () => {
+      await expect(
+        pipe.transform({ orderId: '' }, { type: 'body', metatype: CancelOrderDto }),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('SubscribeBookDto', () => {
+    it('rejects when ticker is missing', async () => {
+      await expect(
+        pipe.transform({}, { type: 'body', metatype: SubscribeBookDto }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

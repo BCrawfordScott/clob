@@ -148,3 +148,11 @@ NB: Each step began after using /clear to clear the current context of the claud
 ### Prompt 29 — Generate README
 
 > Analyze this project in its entirety and then produce a Clear README outlining the project, how to use it, and how it works.
+
+### Prompt 30 — Integration Test Planning and Implementation
+
+> We have good unit test coverage, but minimal integration test coverage. Examine the Server and identify appropriate candidates for integration testing.
+
+### Prompt 31 — Run Full Test Suite and Update README
+
+> rerun the full test suite, including e2es. If all pass, update the README with any additional information re testing that is appropriate.

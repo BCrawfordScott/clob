@@ -191,10 +191,12 @@ Joins the client to the ticker's broadcast room. If a book has previously been c
 
 ## Testing
 
-The test suite has three layers:
+The test suite is organised into four layers, each adding confidence at a higher level of integration.
 
-**Unit tests** (`*.spec.ts` alongside each domain file) — cover `PriceLevel`, `OrderBook`, and `MatchingEngine` in isolation. No NestJS context required.
+**Unit tests** (`domain/**/*.spec.ts`) — cover `PriceLevel`, `OrderBook`, and `MatchingEngine` in complete isolation. No NestJS context, no I/O. Scenarios include: enqueue/dequeue/remove, top-of-book correctness, no-match, full fill, partial fill, multi-level fill, time priority within a price level, and self-trade prevention.
 
-**Integration tests** (`order.service.spec.ts`, `order-book-registry.service.spec.ts`) — exercise `OrderService` through the NestJS testing module with a real in-memory book.
+**Service integration tests** (`services/**/*.spec.ts`) — exercise `OrderService` and `OrderBookRegistry` through the NestJS `TestingModule` with real domain objects. `order.service.spec.ts` uses a mocked `EventEmitter2` to assert the exact events emitted in each scenario. `order.service.integration.spec.ts` replaces the mock with a real `EventEmitterModule` to verify that events fire with correct payloads and in the correct order.
 
-**E2E tests** (`server/src/test/clob.e2e-spec.ts`) — spin up a full NestJS application on a random port, connect real Socket.IO clients, and verify end-to-end flows: order placement, cross-client trade, subscription scoping, cancellation, partial fills, and late-join snapshot delivery.
+**Gateway integration tests** (`gateway/clob.gateway.integration.spec.ts`) — wire the full server-side stack (`ClobGateway` + `OrderService` + `MatchingEngine` + real `EventEmitterModule`) inside a `TestingModule`. Only the Socket.IO `server` object is mocked. Covers: no-match placement, full-fill broadcast, cancel confirmation, and late-subscriber snapshot delivery. `clob.gateway.spec.ts` also validates that the `ValidationPipe` configuration on each inbound DTO correctly rejects malformed payloads.
+
+**E2E tests** (`server/src/test/clob.e2e-spec.ts`) — spin up a full NestJS application on a random port, connect real Socket.IO clients, and verify end-to-end message round-trips: order placement, cross-client trade, subscription room scoping, cancellation, partial fills, and late-join snapshot delivery.
