@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { v4 as uuidv4 } from 'uuid';
 import { Order, Side, Ticker, Trade } from '../../domain/models';
 import { MatchingEngine } from '../../domain/matching-engine/matching-engine';
 import { OrderBookRegistry } from '../order-book-registry/order-book-registry.service';
+import { Events } from '../../events';
 
 export type OrderStatus = 'open' | 'partial' | 'filled';
 
@@ -30,6 +32,7 @@ export class OrderService {
   constructor(
     private readonly registry: OrderBookRegistry,
     private readonly engine: MatchingEngine,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   placeOrder(input: PlaceOrderInput): PlaceOrderResult {
@@ -58,9 +61,26 @@ export class OrderService {
       order.remainingQty = result.takerRemainingQty;
       trades.push(...result.trades);
 
+      result.trades.forEach(trade => this.eventEmitter.emit(Events.TRADE_EXECUTED, trade));
+      result.exhaustedMakers.forEach(maker =>
+        this.eventEmitter.emit(Events.ORDER_COMPLETED, { orderId: maker.id, traderId: maker.traderId }),
+      );
+
+      if (result.partialMaker) {
+        const filledQty = result.trades.reduce((sum, t) => sum + t.quantity, 0);
+        this.eventEmitter.emit(Events.ORDER_PARTIAL_FILL, {
+          orderId: result.partialMaker.id,
+          traderId: result.partialMaker.traderId,
+          filledQty,
+          remainingQty: result.partialMaker.remainingQty,
+        });
+      }
+
       if (result.levelExhausted) {
         book.removePriceLevel(level.price, order.side === 'buy' ? 'sell' : 'buy');
       }
+
+      this.eventEmitter.emit(Events.ORDERBOOK_UPDATED, { ticker: order.ticker, snapshot: book.snapshot() });
     }
 
     if (order.remainingQty > 0) {
@@ -79,7 +99,10 @@ export class OrderService {
     if (!book) throw new Error(`Invariant violated: book not found for ticker ${ticker}`);
 
     const cancelled = book.cancelOrder(orderId);
-    if (cancelled) this.registry.unregisterOrder(orderId);
+    if (cancelled) {
+      this.registry.unregisterOrder(orderId);
+      this.eventEmitter.emit(Events.ORDERBOOK_UPDATED, { ticker, snapshot: book.snapshot() });
+    }
 
     return { orderId, cancelled };
   }

@@ -7,6 +7,8 @@ export interface SingleLevelMatchResult {
   trades: Trade[];
   takerRemainingQty: number;
   levelExhausted: boolean;
+  exhaustedMakers: Array<{ id: string; traderId: string }>;
+  partialMaker: { id: string; traderId: string; remainingQty: number } | null;
 }
 
 @Injectable()
@@ -31,6 +33,8 @@ export class MatchingEngine {
     if (frontOrder.traderId === incomingOrder.traderId) return null;
 
     const trades: Trade[] = [];
+    const exhaustedMakers: Array<{ id: string; traderId: string }> = [];
+    let partialMaker: SingleLevelMatchResult['partialMaker'] = null;
     let takerRemaining = incomingOrder.remainingQty;
 
     while (takerRemaining > 0) {
@@ -60,15 +64,19 @@ export class MatchingEngine {
 
       if (maker.remainingQty > 0) {
         level.prepend(maker); // Partially filled: restore to front with updated remainingQty
+        partialMaker = { id: maker.id, traderId: maker.traderId, remainingQty: maker.remainingQty };
         break;                // Taker is satisfied
       }
-      // Maker fully consumed — continue to next resting order
+      // Maker fully consumed — record for order.completed emission upstream
+      exhaustedMakers.push({ id: maker.id, traderId: maker.traderId });
     }
 
     return {
       trades,
       takerRemainingQty: takerRemaining,
       levelExhausted: level.isEmpty(),
+      exhaustedMakers,
+      partialMaker,
     };
   }
 }

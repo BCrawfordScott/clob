@@ -5,6 +5,8 @@ import { OrderBookRegistry } from '../services/order-book-registry/order-book-re
 import { PlaceOrderDto } from './dto/place-order.dto';
 import { CancelOrderDto } from './dto/cancel-order.dto';
 import { SubscribeBookDto } from './dto/subscribe-book.dto';
+import { Trade } from '../domain/models';
+import { OrderBookUpdatedPayload, OrderCompletedPayload, OrderPartialFillEvent } from '../events';
 
 type MockSocket = { id: string; emit: jest.Mock; join: jest.Mock };
 
@@ -55,10 +57,11 @@ describe('ClobGateway', () => {
       expect(client.emit).toHaveBeenCalledWith('order_placed', { orderId: 'order-xyz', status: 'filled' });
     });
 
-    it('registers traderId in clientTraderMap', () => {
+    it('registers traderId in clientTraderMap and traderClientMap', () => {
       const client = makeSocket('socket-A');
       gateway.handlePlaceOrder(client as unknown as Socket, makePlaceOrderDto({ traderId: 'trader-X' }));
       expect((gateway as any).clientTraderMap.get('socket-A')).toBe('trader-X');
+      expect((gateway as any).traderClientMap.get('trader-X')).toBe('socket-A');
     });
 
     it('emits error and does not throw when orderService throws an Error', () => {
@@ -122,13 +125,15 @@ describe('ClobGateway', () => {
   });
 
   describe('handleDisconnect', () => {
-    it('removes the client entry from clientTraderMap', () => {
+    it('removes the client from both clientTraderMap and traderClientMap', () => {
       const client = makeSocket('socket-A');
       gateway.handlePlaceOrder(client as unknown as Socket, makePlaceOrderDto({ traderId: 'trader-X' }));
       expect((gateway as any).clientTraderMap.has('socket-A')).toBe(true);
+      expect((gateway as any).traderClientMap.has('trader-X')).toBe(true);
 
       gateway.handleDisconnect(client as unknown as Socket);
       expect((gateway as any).clientTraderMap.has('socket-A')).toBe(false);
+      expect((gateway as any).traderClientMap.has('trader-X')).toBe(false);
     });
 
     it('does not throw when the disconnecting client was never registered', () => {
@@ -136,4 +141,83 @@ describe('ClobGateway', () => {
       expect(() => gateway.handleDisconnect(client as unknown as Socket)).not.toThrow();
     });
   });
+
+  describe('@OnEvent handlers', () => {
+    let mockEmit: jest.Mock;
+    let mockTo: jest.Mock;
+
+    beforeEach(() => {
+      mockEmit = jest.fn();
+      mockTo = jest.fn().mockReturnValue({ emit: mockEmit });
+      (gateway as any).server = { to: mockTo };
+    });
+
+    describe('handleTradeExecuted', () => {
+      it('broadcasts trade_executed to the ticker room', () => {
+        const trade = { ticker: 'TW', buyOrderId: 'b1', sellOrderId: 's1', quantity: 5 } as Trade;
+        gateway.handleTradeExecuted(trade);
+        expect(mockTo).toHaveBeenCalledWith('TW');
+        expect(mockEmit).toHaveBeenCalledWith('trade_executed', trade);
+      });
+    });
+
+    describe('handleOrderBookUpdated', () => {
+      it('broadcasts orderbook_update snapshot to the ticker room', () => {
+        const payload: OrderBookUpdatedPayload = {
+          ticker: 'TW',
+          snapshot: { ticker: 'TW', bids: [], asks: [], timestamp: 1000 },
+        };
+        gateway.handleOrderBookUpdated(payload);
+        expect(mockTo).toHaveBeenCalledWith('TW');
+        expect(mockEmit).toHaveBeenCalledWith('orderbook_update', payload.snapshot);
+      });
+    });
+
+    describe('handleOrderCompleted', () => {
+      it('emits order_completed to the trader socket when the trader is connected', () => {
+        (gateway as any).traderClientMap.set('trader-X', 'socket-A');
+        const payload: OrderCompletedPayload = { orderId: 'order-abc', traderId: 'trader-X' };
+        gateway.handleOrderCompleted(payload);
+        expect(mockTo).toHaveBeenCalledWith('socket-A');
+        expect(mockEmit).toHaveBeenCalledWith('order_completed', { orderId: 'order-abc', status: 'filled' });
+      });
+
+      it('does not emit and does not throw when the trader is not connected', () => {
+        const payload: OrderCompletedPayload = { orderId: 'order-abc', traderId: 'unknown-trader' };
+        expect(() => gateway.handleOrderCompleted(payload)).not.toThrow();
+        expect(mockTo).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('handleOrderPartialFill', () => {
+      it('emits order_partial_fill to the trader socket when the trader is connected', () => {
+        (gateway as any).traderClientMap.set('trader-X', 'socket-A');
+        const payload: OrderPartialFillEvent = {
+          orderId: 'order-abc',
+          traderId: 'trader-X',
+          filledQty: 10,
+          remainingQty: 10,
+        };
+        gateway.handleOrderPartialFill(payload);
+        expect(mockTo).toHaveBeenCalledWith('socket-A');
+        expect(mockEmit).toHaveBeenCalledWith('order_partial_fill', {
+          orderId: 'order-abc',
+          filledQty: 10,
+          remainingQty: 10,
+        });
+      });
+
+      it('does not emit and does not throw when the trader is not connected', () => {
+        const payload: OrderPartialFillEvent = {
+          orderId: 'order-abc',
+          traderId: 'unknown-trader',
+          filledQty: 5,
+          remainingQty: 15,
+        };
+        expect(() => gateway.handleOrderPartialFill(payload)).not.toThrow();
+        expect(mockTo).not.toHaveBeenCalled();
+      });
+    });
+  });
 });
+

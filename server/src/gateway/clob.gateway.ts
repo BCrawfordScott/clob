@@ -8,12 +8,14 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { UsePipes, ValidationPipe } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
 import { Server, Socket } from 'socket.io';
 import { OrderService } from '../services/order/order.service';
 import { OrderBookRegistry } from '../services/order-book-registry/order-book-registry.service';
 import { PlaceOrderDto } from './dto/place-order.dto';
 import { CancelOrderDto } from './dto/cancel-order.dto';
 import { SubscribeBookDto } from './dto/subscribe-book.dto';
+import { Events, OrderBookUpdatedPayload, OrderCompletedPayload, OrderPartialFillEvent, TradeExecutedPayload } from '../events';
 
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 @WebSocketGateway({ cors: { origin: '*' } })
@@ -22,8 +24,8 @@ export class ClobGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   private readonly server!: Server;
 
-  // socketId → traderId; populated on place_order, used in Step 10 for targeted delivery
-  private readonly clientTraderMap = new Map<string, string>();
+  private readonly clientTraderMap = new Map<string, string>(); // socketId → traderId
+  private readonly traderClientMap = new Map<string, string>(); // traderId → socketId
 
   constructor(
     private readonly orderService: OrderService,
@@ -33,6 +35,8 @@ export class ClobGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleConnection(_client: Socket): void {}
 
   handleDisconnect(client: Socket): void {
+    const traderId = this.clientTraderMap.get(client.id);
+    if (traderId) this.traderClientMap.delete(traderId);
     this.clientTraderMap.delete(client.id);
   }
 
@@ -43,10 +47,9 @@ export class ClobGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ): void {
     try {
       this.clientTraderMap.set(client.id, body.traderId);
+      this.traderClientMap.set(body.traderId, client.id);
       const result = this.orderService.placeOrder(body);
       client.emit('order_placed', { orderId: result.order.id, status: result.status });
-      // TODO Step 10: emit trade_executed for each result.trade
-      // TODO Step 10: emit orderbook_update snapshot to ticker room
     } catch (e) {
       client.emit('error', { message: e instanceof Error ? e.message : 'Unknown error' });
     }
@@ -64,7 +67,6 @@ export class ClobGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
       client.emit('order_cancelled', { orderId: result.orderId, status: 'cancelled' });
-      // TODO Step 10: emit orderbook_update snapshot to ticker room
     } catch (e) {
       client.emit('error', { message: e instanceof Error ? e.message : 'Unknown error' });
     }
@@ -76,6 +78,33 @@ export class ClobGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() body: SubscribeBookDto,
   ): void {
     client.join(body.ticker);
-    // TODO Step 10: emit current orderbook_update snapshot to client
+  }
+
+  @OnEvent(Events.TRADE_EXECUTED)
+  handleTradeExecuted(trade: TradeExecutedPayload): void {
+    this.server.to(trade.ticker).emit('trade_executed', trade);
+  }
+
+  @OnEvent(Events.ORDERBOOK_UPDATED)
+  handleOrderBookUpdated(payload: OrderBookUpdatedPayload): void {
+    this.server.to(payload.ticker).emit('orderbook_update', payload.snapshot);
+  }
+
+  @OnEvent(Events.ORDER_COMPLETED)
+  handleOrderCompleted(payload: OrderCompletedPayload): void {
+    const socketId = this.traderClientMap.get(payload.traderId);
+    if (!socketId) return; // trader not currently connected — no-op
+    this.server.to(socketId).emit('order_completed', { orderId: payload.orderId, status: 'filled' });
+  }
+
+  @OnEvent(Events.ORDER_PARTIAL_FILL)
+  handleOrderPartialFill(payload: OrderPartialFillEvent): void {
+    const socketId = this.traderClientMap.get(payload.traderId);
+    if (!socketId) return; // trader not currently connected — no-op
+    this.server.to(socketId).emit('order_partial_fill', {
+      orderId: payload.orderId,
+      filledQty: payload.filledQty,
+      remainingQty: payload.remainingQty,
+    });
   }
 }

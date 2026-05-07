@@ -56,6 +56,8 @@ describe('MatchingEngine', () => {
       expect(result.trades[0].quantity).toBe(10);
       expect(result.takerRemainingQty).toBe(0);
       expect(result.levelExhausted).toBe(true);
+      expect(result.exhaustedMakers).toEqual([{ id: 'maker-1', traderId: 'trader-B' }]);
+      expect(result.partialMaker).toBeNull();
     });
   });
 
@@ -69,6 +71,7 @@ describe('MatchingEngine', () => {
       expect(result.trades[0].quantity).toBe(5);
       expect(result.takerRemainingQty).toBe(5);
       expect(result.levelExhausted).toBe(true);
+      expect(result.exhaustedMakers).toEqual([{ id: 'maker-1', traderId: 'trader-B' }]);
     });
 
     it('restores the partially-filled maker to the front when the taker is satisfied first', () => {
@@ -81,6 +84,8 @@ describe('MatchingEngine', () => {
       expect(result.takerRemainingQty).toBe(0);
       expect(result.levelExhausted).toBe(false);
       expect(level.peek()!.remainingQty).toBe(10);
+      expect(result.exhaustedMakers).toHaveLength(0);
+      expect(result.partialMaker).toEqual({ id: 'maker-1', traderId: 'trader-B', remainingQty: 10 });
     });
   });
 
@@ -97,6 +102,11 @@ describe('MatchingEngine', () => {
       expect(result.takerRemainingQty).toBe(0);
       expect(result.levelExhausted).toBe(false);
       expect(level.peek()!.remainingQty).toBe(3);
+      // maker-1 and maker-2 fully consumed; maker-3 partially filled (restored to front)
+      expect(result.exhaustedMakers).toEqual([
+        { id: 'maker-1', traderId: 'trader-B' },
+        { id: 'maker-2', traderId: 'trader-B' },
+      ]);
     });
 
     it('exhausts the level when all resting orders are fully consumed', () => {
@@ -108,6 +118,10 @@ describe('MatchingEngine', () => {
       expect(result.trades).toHaveLength(2);
       expect(result.levelExhausted).toBe(true);
       expect(level.isEmpty()).toBe(true);
+      expect(result.exhaustedMakers).toEqual([
+        { id: 'maker-1', traderId: 'trader-B' },
+        { id: 'maker-2', traderId: 'trader-B' },
+      ]);
     });
 
     it('fills the earlier-enqueued order first (time priority)', () => {

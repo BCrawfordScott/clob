@@ -105,3 +105,13 @@ NB: Each step began after using /clear to clear the current context of the claud
 ### Prompt 19 — Gateway Unit Tests
 
 > Now that the gateway is implemented, create the unit tests for it. Focus on unit tests, do not venture into E2E tests.
+
+### Prompt 20 — Step 10: Event Publishing
+
+> Steps 1–9 are complete. We are now implementing Step 10: event publishing. This step wires OrderService and the gateway together via NestJS EventEmitter2 so that trades, book updates, and order completions are broadcast to the correct clients in real time.
+> [full step 10 specification]
+
+### Prompt 21 — Partial Maker Fill Eventing
+
+> Add partial maker fill eventing to the existing Step 10 event pipeline. The SingleLevelMatchResult interface and MatchingEngine implementation are complete and already track exhaustedMakers. Do not modify either.
+> [full specification]

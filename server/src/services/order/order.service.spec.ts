@@ -1,7 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OrderService, PlaceOrderInput } from './order.service';
 import { OrderBookRegistry } from '../order-book-registry/order-book-registry.service';
 import { MatchingEngine } from '../../domain/matching-engine/matching-engine';
+import { Events } from '../../events';
 
 function makeInput(overrides: Partial<PlaceOrderInput> = {}): PlaceOrderInput {
   return {
@@ -17,10 +19,18 @@ function makeInput(overrides: Partial<PlaceOrderInput> = {}): PlaceOrderInput {
 describe('OrderService', () => {
   let service: OrderService;
   let registry: OrderBookRegistry;
+  const mockEventEmitter = { emit: jest.fn() };
 
   beforeEach(async () => {
+    mockEventEmitter.emit.mockClear();
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [OrderService, OrderBookRegistry, MatchingEngine],
+      providers: [
+        OrderService,
+        OrderBookRegistry,
+        MatchingEngine,
+        { provide: EventEmitter2, useValue: mockEventEmitter },
+      ],
     }).compile();
 
     service = module.get<OrderService>(OrderService);
@@ -126,6 +136,86 @@ describe('OrderService', () => {
       service.cancelOrder(placed.order.id);
       const second = service.cancelOrder(placed.order.id);
       expect(second.cancelled).toBe(false);
+    });
+  });
+
+  describe('event emission', () => {
+    it('emits no events when placeOrder produces no match', () => {
+      service.placeOrder(makeInput({ side: 'buy', price: 100, quantity: 10 }));
+      expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+    });
+
+    it('emits trade.executed once per trade on a full fill', () => {
+      service.placeOrder(makeInput({ traderId: 'trader-B', side: 'sell', price: 100, quantity: 10 }));
+      service.placeOrder(makeInput({ traderId: 'trader-A', side: 'buy', price: 100, quantity: 10 }));
+      const tradeCalls = mockEventEmitter.emit.mock.calls.filter(([event]) => event === Events.TRADE_EXECUTED);
+      expect(tradeCalls).toHaveLength(1);
+      expect(tradeCalls[0][1]).toMatchObject({ quantity: 10 });
+    });
+
+    it('emits orderbook.updated after each matched level', () => {
+      service.placeOrder(makeInput({ traderId: 'trader-B', side: 'sell', price: 100, quantity: 10 }));
+      service.placeOrder(makeInput({ traderId: 'trader-A', side: 'buy', price: 100, quantity: 10 }));
+      const updateCalls = mockEventEmitter.emit.mock.calls.filter(([event]) => event === Events.ORDERBOOK_UPDATED);
+      expect(updateCalls).toHaveLength(1);
+      expect(updateCalls[0][1]).toMatchObject({ ticker: 'AAPL' });
+    });
+
+    it('emits orderbook.updated once per level on a multi-level fill', () => {
+      service.placeOrder(makeInput({ traderId: 'trader-B', side: 'sell', price: 99, quantity: 5 }));
+      service.placeOrder(makeInput({ traderId: 'trader-B', side: 'sell', price: 100, quantity: 5 }));
+      service.placeOrder(makeInput({ traderId: 'trader-A', side: 'buy', price: 100, quantity: 10 }));
+      const updateCalls = mockEventEmitter.emit.mock.calls.filter(([event]) => event === Events.ORDERBOOK_UPDATED);
+      expect(updateCalls).toHaveLength(2);
+    });
+
+    it('emits order.completed when a maker is fully consumed', () => {
+      const maker = service.placeOrder(makeInput({ traderId: 'trader-B', side: 'sell', price: 100, quantity: 10 }));
+      service.placeOrder(makeInput({ traderId: 'trader-A', side: 'buy', price: 100, quantity: 10 }));
+      const completedCalls = mockEventEmitter.emit.mock.calls.filter(([event]) => event === Events.ORDER_COMPLETED);
+      expect(completedCalls).toHaveLength(1);
+      expect(completedCalls[0][1]).toEqual({ orderId: maker.order.id, traderId: 'trader-B' });
+    });
+
+    it('does not emit order.completed when the maker is only partially filled', () => {
+      service.placeOrder(makeInput({ traderId: 'trader-B', side: 'sell', price: 100, quantity: 20 }));
+      service.placeOrder(makeInput({ traderId: 'trader-A', side: 'buy', price: 100, quantity: 10 }));
+      const completedCalls = mockEventEmitter.emit.mock.calls.filter(([event]) => event === Events.ORDER_COMPLETED);
+      expect(completedCalls).toHaveLength(0);
+    });
+
+    it('emits orderbook.updated after a successful cancel', () => {
+      const placed = service.placeOrder(makeInput({ side: 'sell', price: 100, quantity: 10 }));
+      mockEventEmitter.emit.mockClear();
+      service.cancelOrder(placed.order.id);
+      const updateCalls = mockEventEmitter.emit.mock.calls.filter(([event]) => event === Events.ORDERBOOK_UPDATED);
+      expect(updateCalls).toHaveLength(1);
+      expect(updateCalls[0][1]).toMatchObject({ ticker: 'AAPL' });
+    });
+
+    it('emits no events when cancelOrder finds no order', () => {
+      service.cancelOrder('nonexistent-id');
+      expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+    });
+
+    it('emits order.partialFill with correct payload when a partial maker fill occurs', () => {
+      const maker = service.placeOrder(makeInput({ traderId: 'trader-B', side: 'sell', price: 100, quantity: 20 }));
+      service.placeOrder(makeInput({ traderId: 'trader-A', side: 'buy', price: 100, quantity: 10 }));
+      const partialCalls = mockEventEmitter.emit.mock.calls.filter(([event]) => event === Events.ORDER_PARTIAL_FILL);
+      expect(partialCalls).toHaveLength(1);
+      expect(partialCalls[0][1]).toEqual({
+        orderId: maker.order.id,
+        traderId: 'trader-B',
+        filledQty: 10,
+        remainingQty: 10,
+      });
+    });
+
+    it('does not emit order.partialFill when the maker is fully consumed', () => {
+      service.placeOrder(makeInput({ traderId: 'trader-B', side: 'sell', price: 100, quantity: 10 }));
+      service.placeOrder(makeInput({ traderId: 'trader-A', side: 'buy', price: 100, quantity: 10 }));
+      const partialCalls = mockEventEmitter.emit.mock.calls.filter(([event]) => event === Events.ORDER_PARTIAL_FILL);
+      expect(partialCalls).toHaveLength(0);
     });
   });
 });
