@@ -84,3 +84,15 @@ NB: Each step began after using /clear to clear the current context of the claud
 > Step 5 in What to Build - Sequence of Claude.md is complete. Please plan step 6: The OrderBookRegistry is a NestJS @Injectable() singleton that acts as the directory of all active OrderBook instances in the system.
 > Its sole responsibility is answering one question: given a ticker symbol, give me its OrderBook. That's it.
 > [implementation sketch with getOrCreate and get methods provided]
+
+### Prompt 16 — Step 7: OrderService
+
+> Step 6 in the What to Build - Sequence is complete. Please plan step 7. Use placeholders for event emission for now, as events are designated for a future step.
+
+### Prompt 17 — OrderService refactors
+
+> Three fixes are required in order.service.ts, plus one refactor to order-book-registry.service.ts.
+> 1. Inject MatchingEngine via NestJS DI
+> 2. Extract status derivation to a named private method deriveStatus
+> 3. Assert book existence in cancelOrder (throw on invariant violation instead of optional chain)
+> 4. Move orderTicker map to OrderBookRegistry with registerOrder, unregisterOrder, findTickerByOrderId methods

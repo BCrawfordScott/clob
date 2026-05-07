@@ -38,4 +38,25 @@ describe('OrderBookRegistry', () => {
       expect(registry.get('AAPL')).toBe(created);
     });
   });
+
+  describe('registerOrder / findTickerByOrderId / unregisterOrder', () => {
+    it('findTickerByOrderId returns undefined before registration', () => {
+      expect(registry.findTickerByOrderId('order-1')).toBeUndefined();
+    });
+
+    it('findTickerByOrderId returns the registered ticker', () => {
+      registry.registerOrder('order-1', 'AAPL');
+      expect(registry.findTickerByOrderId('order-1')).toBe('AAPL');
+    });
+
+    it('unregisterOrder removes the entry so findTickerByOrderId returns undefined', () => {
+      registry.registerOrder('order-1', 'AAPL');
+      registry.unregisterOrder('order-1');
+      expect(registry.findTickerByOrderId('order-1')).toBeUndefined();
+    });
+
+    it('unregisterOrder on an unknown orderId does not throw', () => {
+      expect(() => registry.unregisterOrder('nonexistent')).not.toThrow();
+    });
+  });
 });

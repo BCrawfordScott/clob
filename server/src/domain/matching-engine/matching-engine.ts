@@ -1,3 +1,4 @@
+import { Injectable } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { Order, Trade } from '../models';
 import { PriceLevel } from '../price-level/price-level';
@@ -8,6 +9,7 @@ export interface SingleLevelMatchResult {
   levelExhausted: boolean;
 }
 
+@Injectable()
 export class MatchingEngine {
   /**
    * Walks the given price level from front to back, consuming resting orders
