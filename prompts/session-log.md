@@ -61,3 +61,20 @@ NB: Each step began after using /clear to clear the current context of the claud
 ### Prompt 13 — Build Test File and Run Tests
 
 > Build the test file now and run the tests
+
+## Session 3 — 2026-05-07
+
+### Prompt 14 — Step 5: MatchingEngine
+
+> Steps 1–4 are complete. The domain layer has PriceLevel (FIFO queue over Order[] with enqueue, dequeue, prepend, remove, peek, isEmpty, totalQuantity, and snapshot) and OrderBook (BTree-backed bid/ask sides with addOrder, cancelOrder, bestBidLevel, bestAskLevel, peekBestBid, peekBestAsk, removePriceLevel, and snapshot). We are now implementing Step 5: the MatchingEngine.
+>
+> Responsibility Boundaries
+> MatchingEngine.match() owns mutations on a PriceLevel. It may call dequeue() and prepend() on the level it is given. It does not touch the OrderBook directly — no removePriceLevel(), addOrder(), or cancelOrder().
+> OrderService owns mutations on the OrderBook. It fetches levels from the book, passes them to match(), and after each call applies book-level mutations: removing exhausted levels and adding residual orders.
+>
+> Design
+> match() receives the incoming order and the live counter-side price level to match against. It walks the orders in that level from front to back, consuming resting orders via dequeue(), producing one Trade per fill, and returning when either the taker is satisfied or the level is exhausted. If a resting order is partially filled, it is restored to the front of the level via prepend() with the updated remainingQty before returning.
+> OrderService drives the cross-level loop:
+> [...]
+>
+> Files to Create: matching-engine.ts and matching-engine.spec.ts with 12 test cases covering no-match, full fill, partial fill, multi-level fill, time priority, self-trade prevention, order ID assignment, and maker's price used.

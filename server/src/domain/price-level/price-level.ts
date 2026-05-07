@@ -20,6 +20,15 @@ export class PriceLevel {
     return this.orders.shift();
   }
 
+  /**
+   * Inserts a copy of the order at the front of the queue.
+   * Used by the MatchingEngine to restore a partially-filled maker order
+   * after updating its remainingQty.
+   */
+  prepend(order: Order): void {
+    this.orders.unshift({ ...order });
+  }
+
   remove(orderId: string): boolean {
     const index = this.orders.findIndex((o) => o.id === orderId);
     if (index === -1) return false;

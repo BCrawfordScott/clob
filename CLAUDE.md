@@ -432,3 +432,43 @@ All auxiliary data structures that support orderbook operations must be designed
 The canonical example: `OrderBook.orderIndex` stores `{ level: PriceLevel; side: Side }` rather than just `PriceLevel`. The `side` field allows `cancelOrder` to select the correct BTree (`bids` vs. `asks`) in O(1). Omitting it and using a reference-equality BTree lookup would degrade the cleanup step to O(log n), breaking the documented cancel complexity.
 
 When adding any helper map, index, or cache inside a domain class or service, verify that every operation path it participates in still meets its documented complexity target.
+
+### 2026-05-07 — MatchingEngine and OrderService Responsibility Boundary
+
+The original CLAUDE.md describes `MatchingEngine.match()` as receiving the full `OrderBook` and returning `{ trades, residualOrder }`. This was refined during Step 5. The implemented design differs in two ways:
+
+**`MatchingEngine.match()` operates on a single `PriceLevel`, not the `OrderBook`.**
+
+```typescript
+match(incomingOrder: Order, level: PriceLevel): SingleLevelMatchResult | null
+```
+
+It returns `null` if there is no match at this level (spread too wide, level empty, or self-trade at front). Otherwise it returns `{ trades, takerRemainingQty, levelExhausted }`. It mutates the level directly via `dequeue()` and `prepend()` — it does not call any `OrderBook` method.
+
+**`OrderService` owns the cross-level loop and all `OrderBook` mutations.**
+
+```typescript
+while (order.remainingQty > 0) {
+  const level = order.side === 'buy'
+    ? book.bestAskLevel()
+    : book.bestBidLevel();
+
+  if (!level) break;
+
+  const result = engine.match(order, level);
+  if (!result) break; // spread too wide or self-trade at front
+
+  order.remainingQty = result.takerRemainingQty;
+  result.trades.forEach(trade => emit(trade));
+
+  if (result.levelExhausted) {
+    book.removePriceLevel(level.price, order.side === 'buy' ? 'sell' : 'buy');
+  }
+}
+
+if (order.remainingQty > 0) book.addOrder(order);
+```
+
+`OrderService` is responsible for: advancing to the next price level between `match()` calls, removing exhausted levels from the book, and adding the residual order to the book if any quantity remains unfilled.
+
+**`PriceLevel` gained a `prepend(order)` method** to support the MatchingEngine restoring a partially-filled maker order to the front of the queue with its updated `remainingQty`. It follows the same defensive-copy pattern as `enqueue`: stores `{ ...order }`, not the caller's reference.
