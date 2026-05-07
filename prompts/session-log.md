@@ -120,3 +120,7 @@ NB: Each step began after using /clear to clear the current context of the claud
 
 > We are implementing Step 11: the Angular client. The server is complete. The client's sole purpose is to provide a functional interface for interacting with the CLOB WebSocket API. It does not need to be visually impressive — it needs to be clean, functional, and maintainable.
 > [full specification including ClobService design, component requirements, AppModule wiring, and verification steps]
+
+### Prompt 23 — Fix Server Build
+
+> The client app is compiling and serving properly, but there is an error in the server. Please attempt to build and run the server, diagnose the error, and resolve.

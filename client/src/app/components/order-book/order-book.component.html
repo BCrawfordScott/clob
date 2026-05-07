@@ -1,6 +1,5 @@
-<h2>Order Book{{ snapshot ? ' — ' + snapshot.ticker : '' }}</h2>
-
-<ng-container *ngIf="snapshot as s; else noData">
+<ng-container *ngIf="snapshot$ | async as s; else noData">
+  <h2>Order Book — {{ s.ticker }}</h2>
   <div class="book-tables">
     <div>
       <h3>Bids</h3>
@@ -36,5 +35,6 @@
 </ng-container>
 
 <ng-template #noData>
+  <h2>Order Book</h2>
   <p class="empty">Waiting for orderbook data&hellip;</p>
 </ng-template>

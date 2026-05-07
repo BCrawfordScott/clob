@@ -24,6 +24,7 @@ export class OrderEntryComponent {
       price: string;
       quantity: string;
     };
+    this.clobService.subscribeBook(ticker);
     this.clobService.placeOrder({ ticker, side, price: +price, quantity: +quantity });
     form.resetForm();
   }

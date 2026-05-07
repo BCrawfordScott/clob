@@ -80,13 +80,14 @@ export class OrderService {
         book.removePriceLevel(level.price, order.side === 'buy' ? 'sell' : 'buy');
       }
 
-      this.eventEmitter.emit(Events.ORDERBOOK_UPDATED, { ticker: order.ticker, snapshot: book.snapshot() });
     }
 
     if (order.remainingQty > 0) {
       book.addOrder(order);
       this.registry.registerOrder(order.id, order.ticker);
     }
+
+    this.eventEmitter.emit(Events.ORDERBOOK_UPDATED, { ticker: order.ticker, snapshot: book.snapshot() });
 
     return { order, trades, status: this.deriveStatus(trades, order) };
   }

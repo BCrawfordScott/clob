@@ -19,7 +19,7 @@ import { TradeFeedComponent } from './components/trade-feed/trade-feed.component
   imports: [
     BrowserModule,
     FormsModule,
-    SocketIoModule.forRoot({ url: environment.wsUrl, options: {} }),
+    SocketIoModule.forRoot({ url: environment.wsUrl, options: { transports: ['websocket'] } }),
   ],
   bootstrap: [AppComponent],
 })
