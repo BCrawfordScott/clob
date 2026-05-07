@@ -136,3 +136,11 @@ NB: Each step began after using /clear to clear the current context of the claud
 ### Prompt 26 — Open Orders Cancel List
 
 > The UI currently does not support a convenient way to cancel orders. Update the "Cancel Order" section of the UI to instead be a list of the user's placed orders, each with a cancel button that when clicked, cancels that specific order.
+
+### Prompt 27 — Step 12: E2E Tests
+
+> We are now ready for step 12 in the CLAUDE.md What to Build: Generate End to End tests for all the primary flows in the application as currently designed.
+
+### Prompt 28 — Run Full Test Suite
+
+> Run the full test suite, unit tests and e2e

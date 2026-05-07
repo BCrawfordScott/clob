@@ -140,9 +140,11 @@ describe('OrderService', () => {
   });
 
   describe('event emission', () => {
-    it('emits no events when placeOrder produces no match', () => {
+    it('emits only orderbook.updated when placeOrder produces no match', () => {
       service.placeOrder(makeInput({ side: 'buy', price: 100, quantity: 10 }));
-      expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+      const calls = mockEventEmitter.emit.mock.calls;
+      expect(calls).toHaveLength(1);
+      expect(calls[0][0]).toBe(Events.ORDERBOOK_UPDATED);
     });
 
     it('emits trade.executed once per trade on a full fill', () => {
@@ -153,20 +155,22 @@ describe('OrderService', () => {
       expect(tradeCalls[0][1]).toMatchObject({ quantity: 10 });
     });
 
-    it('emits orderbook.updated after each matched level', () => {
+    it('emits orderbook.updated once after a full fill', () => {
       service.placeOrder(makeInput({ traderId: 'trader-B', side: 'sell', price: 100, quantity: 10 }));
+      mockEventEmitter.emit.mockClear();
       service.placeOrder(makeInput({ traderId: 'trader-A', side: 'buy', price: 100, quantity: 10 }));
       const updateCalls = mockEventEmitter.emit.mock.calls.filter(([event]) => event === Events.ORDERBOOK_UPDATED);
       expect(updateCalls).toHaveLength(1);
       expect(updateCalls[0][1]).toMatchObject({ ticker: 'AAPL' });
     });
 
-    it('emits orderbook.updated once per level on a multi-level fill', () => {
+    it('emits orderbook.updated once after a multi-level fill', () => {
       service.placeOrder(makeInput({ traderId: 'trader-B', side: 'sell', price: 99, quantity: 5 }));
       service.placeOrder(makeInput({ traderId: 'trader-B', side: 'sell', price: 100, quantity: 5 }));
+      mockEventEmitter.emit.mockClear();
       service.placeOrder(makeInput({ traderId: 'trader-A', side: 'buy', price: 100, quantity: 10 }));
       const updateCalls = mockEventEmitter.emit.mock.calls.filter(([event]) => event === Events.ORDERBOOK_UPDATED);
-      expect(updateCalls).toHaveLength(2);
+      expect(updateCalls).toHaveLength(1);
     });
 
     it('emits order.completed when a maker is fully consumed', () => {

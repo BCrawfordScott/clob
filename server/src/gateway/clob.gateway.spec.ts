@@ -38,7 +38,7 @@ describe('ClobGateway', () => {
 
     gateway = new ClobGateway(
       orderService as unknown as OrderService,
-      {} as OrderBookRegistry,
+      { get: jest.fn().mockReturnValue(undefined) } as unknown as OrderBookRegistry,
     );
   });
 
