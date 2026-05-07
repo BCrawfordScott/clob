@@ -6,7 +6,13 @@ import { ClobService } from '../../services/clob.service';
   templateUrl: './order-book.component.html',
 })
 export class OrderBookComponent {
-  protected readonly snapshot$ = this.clobService.orderBookUpdate$;
+  protected readonly snapshot$ = this.clobService.activeSnapshot$;
+  protected readonly tickers$ = this.clobService.subscribedTickers$;
+  protected readonly activeTicker$ = this.clobService.activeTicker$;
 
   constructor(private readonly clobService: ClobService) {}
+
+  selectTicker(ticker: string): void {
+    this.clobService.setActiveTicker(ticker);
+  }
 }

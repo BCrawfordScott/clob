@@ -78,6 +78,10 @@ export class ClobGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() body: SubscribeBookDto,
   ): void {
     client.join(body.ticker);
+    const book = this.registry.get(body.ticker);
+    if (book) {
+      client.emit('orderbook_update', book.snapshot());
+    }
   }
 
   @OnEvent(Events.TRADE_EXECUTED)

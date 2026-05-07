@@ -23,21 +23,35 @@
   <button type="submit" [disabled]="placeForm.invalid">Place Order</button>
 </form>
 
-<div *ngIf="lastOrderId$ | async as orderId" class="last-order-id">
-  Last order ID: <code>{{ orderId }}</code>
-</div>
-
 <h3>Subscribe to Book</h3>
 <div class="subscribe-row">
   <input #subscribeInput placeholder="e.g. AAPL">
   <button type="button" (click)="onSubscribeBook(subscribeInput)">Subscribe</button>
 </div>
 
-<h3>Cancel Order</h3>
-<form #cancelForm="ngForm" (ngSubmit)="onCancelOrder(cancelForm)">
-  <div>
-    <label for="orderId">Order ID</label>
-    <input id="orderId" name="orderId" ngModel required placeholder="paste order ID">
-  </div>
-  <button type="submit" [disabled]="cancelForm.invalid">Cancel Order</button>
-</form>
+<h3>Open Orders</h3>
+<ng-container *ngIf="openOrders$ | async as orders">
+  <p *ngIf="orders.length === 0" class="empty">No open orders</p>
+  <table *ngIf="orders.length > 0" class="open-orders">
+    <thead>
+      <tr>
+        <th>Side</th>
+        <th>Ticker</th>
+        <th>Price</th>
+        <th>Qty</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let order of orders">
+        <td [class]="'order-side--' + order.side">{{ order.side | uppercase }}</td>
+        <td>{{ order.ticker }}</td>
+        <td>{{ order.price | number:'1.2-2' }}</td>
+        <td>{{ order.remainingQty }}/{{ order.quantity }}</td>
+        <td>
+          <button type="button" class="cancel-btn" (click)="cancelOrder(order.orderId)">Cancel</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</ng-container>

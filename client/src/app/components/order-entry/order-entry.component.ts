@@ -1,7 +1,5 @@
 import { Component } from '@angular/core';
 import { NgForm } from '@angular/forms';
-import { Observable } from 'rxjs';
-import { map, startWith } from 'rxjs/operators';
 import { ClobService } from '../../services/clob.service';
 
 @Component({
@@ -9,10 +7,7 @@ import { ClobService } from '../../services/clob.service';
   templateUrl: './order-entry.component.html',
 })
 export class OrderEntryComponent {
-  protected readonly lastOrderId$: Observable<string | null> = this.clobService.orderPlaced$.pipe(
-    map(e => e.orderId),
-    startWith(null),
-  );
+  protected readonly openOrders$ = this.clobService.openOrders$;
 
   constructor(protected readonly clobService: ClobService) {}
 
@@ -29,17 +24,15 @@ export class OrderEntryComponent {
     form.resetForm();
   }
 
-  onCancelOrder(form: NgForm): void {
-    if (!form.valid) return;
-    this.clobService.cancelOrder((form.value as { orderId: string }).orderId);
-    form.resetForm();
-  }
-
   onSubscribeBook(input: HTMLInputElement): void {
     const ticker = input.value.trim();
     if (ticker) {
       this.clobService.subscribeBook(ticker);
       input.value = '';
     }
+  }
+
+  cancelOrder(orderId: string): void {
+    this.clobService.cancelOrder(orderId);
   }
 }

@@ -52,3 +52,13 @@ export interface PlaceOrderArgs {
   price: number;
   quantity: number;
 }
+
+export interface TrackedOrder {
+  orderId: string;
+  ticker: string;
+  side: 'buy' | 'sell';
+  price: number;
+  quantity: number;
+  remainingQty: number;
+  status: 'open' | 'partial';
+}

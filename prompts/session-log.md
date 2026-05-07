@@ -124,3 +124,15 @@ NB: Each step began after using /clear to clear the current context of the claud
 ### Prompt 23 — Fix Server Build
 
 > The client app is compiling and serving properly, but there is an error in the server. Please attempt to build and run the server, diagnose the error, and resolve.
+
+### Prompt 24 — Multi-Ticker Tab Navigation
+
+> Update the UI to allow for toggling between the tickers to which the user is subscribed. If I subscribe to both AAPL and TSLA, I want to be able to toggle/navigate between them
+
+### Prompt 25 — Emit Current Orderbook on Subscribe
+
+> The servers clob.gateway.ts responds to the 'subscribe_book' message by joining the body.ticker to the client, but it does not give the client the current state of the orderbook for that ticker. Update the handleSubscribeBook to emit the current state of the ticker's orderbook after subscription.
+
+### Prompt 26 — Open Orders Cancel List
+
+> The UI currently does not support a convenient way to cancel orders. Update the "Cancel Order" section of the UI to instead be a list of the user's placed orders, each with a cancel button that when clicked, cancels that specific order.

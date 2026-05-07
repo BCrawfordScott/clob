@@ -162,6 +162,34 @@ button:disabled {
   white-space: nowrap;
 }
 
+.ticker-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 0.75rem;
+}
+
+.ticker-tab {
+  margin-top: 0;
+  padding: 3px 10px;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  color: #777;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.ticker-tab:hover:not(:disabled) {
+  background: #222;
+  color: #aaa;
+}
+
+.ticker-tab.active {
+  background: #1a2a3a;
+  border-color: #48a;
+  color: #8af;
+}
+
 .book-tables {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -209,4 +237,30 @@ td {
   color: #444;
   font-size: 0.8rem;
   padding: 4px 0;
+}
+
+.open-orders th:last-child,
+.open-orders td:last-child {
+  text-align: right;
+}
+
+.order-side--buy {
+  color: #6d6;
+}
+
+.order-side--sell {
+  color: #d66;
+}
+
+.cancel-btn {
+  margin-top: 0;
+  padding: 2px 8px;
+  background: #3a1a1a;
+  border-color: #844;
+  color: #f88;
+  font-size: 0.72rem;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  background: #4a2020;
 }
