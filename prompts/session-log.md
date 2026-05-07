@@ -92,7 +92,16 @@ NB: Each step began after using /clear to clear the current context of the claud
 ### Prompt 17 — OrderService refactors
 
 > Three fixes are required in order.service.ts, plus one refactor to order-book-registry.service.ts.
+
 > 1. Inject MatchingEngine via NestJS DI
 > 2. Extract status derivation to a named private method deriveStatus
 > 3. Assert book existence in cancelOrder (throw on invariant violation instead of optional chain)
 > 4. Move orderTicker map to OrderBookRegistry with registerOrder, unregisterOrder, findTickerByOrderId methods
+
+### Prompt 18 — Plan Step 9
+
+> Steps 1-7 of the Claude.md What to Build - Sequence are complete. Step 8 is intentionally omitted per addendum 2026-05-07 — TraderService Omission. Please plan step 9 for execution.
+
+### Prompt 19 — Gateway Unit Tests
+
+> Now that the gateway is implemented, create the unit tests for it. Focus on unit tests, do not venture into E2E tests.

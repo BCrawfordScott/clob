@@ -472,3 +472,7 @@ if (order.remainingQty > 0) book.addOrder(order);
 `OrderService` is responsible for: advancing to the next price level between `match()` calls, removing exhausted levels from the book, and adding the residual order to the book if any quantity remains unfilled.
 
 **`PriceLevel` gained a `prepend(order)` method** to support the MatchingEngine restoring a partially-filled maker order to the front of the queue with its updated `remainingQty`. It follows the same defensive-copy pattern as `enqueue`: stores `{ ...order }`, not the caller's reference.
+
+#### 2026-05-07 — TraderService Omission
+
+**TraderService** — intentionally omitted. Trader identity is a plain traderId string stamped onto orders at the gateway. The socketId → traderId mapping lives in the WebSocket gateway as a private map. This is a deliberate simplification — if the system were extended to require account balance checks, position tracking, rate limiting, or trader authentication, a dedicated TraderRegistry service would be the correct home for those concerns and the gateway mapping would be promoted there.
