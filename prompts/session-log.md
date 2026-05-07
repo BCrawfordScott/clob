@@ -144,3 +144,7 @@ NB: Each step began after using /clear to clear the current context of the claud
 ### Prompt 28 — Run Full Test Suite
 
 > Run the full test suite, unit tests and e2e
+
+### Prompt 29 — Generate README
+
+> Analyze this project in its entirety and then produce a Clear README outlining the project, how to use it, and how it works.
