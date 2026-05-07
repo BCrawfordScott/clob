@@ -115,3 +115,8 @@ NB: Each step began after using /clear to clear the current context of the claud
 
 > Add partial maker fill eventing to the existing Step 10 event pipeline. The SingleLevelMatchResult interface and MatchingEngine implementation are complete and already track exhaustedMakers. Do not modify either.
 > [full specification]
+
+### Prompt 22 — Step 11: Angular Client
+
+> We are implementing Step 11: the Angular client. The server is complete. The client's sole purpose is to provide a functional interface for interacting with the CLOB WebSocket API. It does not need to be visually impressive — it needs to be clean, functional, and maintainable.
+> [full specification including ClobService design, component requirements, AppModule wiring, and verification steps]

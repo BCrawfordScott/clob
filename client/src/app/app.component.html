@@ -1,0 +1,23 @@
+<header>
+  <h1>CLOB</h1>
+  <span class="status" [class.connected]="connected$ | async">
+    {{ (connected$ | async) ? 'Connected' : 'Disconnected' }}
+  </span>
+</header>
+
+<ng-container *ngIf="error$ | async as err">
+  <div *ngIf="!isDismissed" class="error-banner">
+    {{ err.message }}
+    <button (click)="isDismissed = true">×</button>
+  </div>
+</ng-container>
+
+<main>
+  <aside>
+    <app-order-entry></app-order-entry>
+  </aside>
+  <section>
+    <app-order-book [snapshot]="orderBookUpdate$ | async"></app-order-book>
+    <app-trade-feed></app-trade-feed>
+  </section>
+</main>

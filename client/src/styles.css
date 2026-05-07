@@ -1,0 +1,212 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  background: #0d0d0d;
+  color: #e0e0e0;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #333;
+}
+
+header h1 {
+  font-size: 1.1rem;
+  letter-spacing: 0.1em;
+}
+
+.status {
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: #400;
+  color: #f88;
+}
+
+.status.connected {
+  background: #040;
+  color: #8f8;
+}
+
+.error-banner {
+  background: #500;
+  color: #fcc;
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.error-banner button {
+  background: none;
+  border: none;
+  color: #fcc;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+main {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+aside {
+  border-right: 1px solid #333;
+  padding-right: 1rem;
+}
+
+section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+h2 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #aaa;
+  margin-bottom: 0.75rem;
+}
+
+h3 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #777;
+  margin: 1rem 0 0.4rem;
+}
+
+form div {
+  margin-bottom: 0.4rem;
+}
+
+label {
+  display: block;
+  font-size: 0.72rem;
+  color: #777;
+  margin-bottom: 2px;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 4px 6px;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  color: #e0e0e0;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+input:focus,
+select:focus {
+  outline: 1px solid #666;
+}
+
+button {
+  margin-top: 0.5rem;
+  padding: 4px 12px;
+  background: #1a3a1a;
+  border: 1px solid #484;
+  color: #8f8;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+button:hover:not(:disabled) {
+  background: #224a22;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.last-order-id {
+  margin-top: 0.5rem;
+  font-size: 0.72rem;
+  color: #777;
+  word-break: break-all;
+}
+
+.last-order-id code {
+  color: #8af;
+}
+
+.subscribe-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.subscribe-row input {
+  flex: 1;
+}
+
+.subscribe-row button {
+  margin-top: 0;
+  white-space: nowrap;
+}
+
+.book-tables {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+th {
+  text-align: right;
+  font-size: 0.7rem;
+  color: #555;
+  padding: 2px 6px;
+  border-bottom: 1px solid #333;
+}
+
+th:first-child,
+td:first-child {
+  text-align: left;
+}
+
+td {
+  text-align: right;
+  padding: 2px 6px;
+}
+
+.bids td:first-child {
+  color: #6d6;
+}
+
+.asks td:first-child {
+  color: #d66;
+}
+
+.trade-feed-scroll {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.empty {
+  color: #444;
+  font-size: 0.8rem;
+  padding: 4px 0;
+}

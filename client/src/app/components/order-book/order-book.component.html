@@ -1,0 +1,40 @@
+<h2>Order Book{{ snapshot ? ' — ' + snapshot.ticker : '' }}</h2>
+
+<ng-container *ngIf="snapshot as s; else noData">
+  <div class="book-tables">
+    <div>
+      <h3>Bids</h3>
+      <table>
+        <thead>
+          <tr><th>Price</th><th>Qty</th><th>Orders</th></tr>
+        </thead>
+        <tbody class="bids">
+          <tr *ngFor="let level of s.bids">
+            <td>{{ level.price | number:'1.2-2' }}</td>
+            <td>{{ level.totalQuantity }}</td>
+            <td>{{ level.orderCount }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h3>Asks</h3>
+      <table>
+        <thead>
+          <tr><th>Price</th><th>Qty</th><th>Orders</th></tr>
+        </thead>
+        <tbody class="asks">
+          <tr *ngFor="let level of s.asks">
+            <td>{{ level.price | number:'1.2-2' }}</td>
+            <td>{{ level.totalQuantity }}</td>
+            <td>{{ level.orderCount }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</ng-container>
+
+<ng-template #noData>
+  <p class="empty">Waiting for orderbook data&hellip;</p>
+</ng-template>

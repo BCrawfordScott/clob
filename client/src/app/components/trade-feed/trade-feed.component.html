@@ -1,0 +1,20 @@
+<h2>Trade Feed</h2>
+
+<div class="trade-feed-scroll">
+  <ng-container *ngIf="trades$ | async as trades">
+    <p *ngIf="trades.length === 0" class="empty">No trades yet.</p>
+    <table *ngIf="trades.length > 0">
+      <thead>
+        <tr><th>Time</th><th>Ticker</th><th>Price</th><th>Qty</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let trade of trades">
+          <td>{{ formatTime(trade.timestamp) }}</td>
+          <td>{{ trade.ticker }}</td>
+          <td>{{ trade.price | number:'1.2-2' }}</td>
+          <td>{{ trade.quantity }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </ng-container>
+</div>
